@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emotion Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px;
+            max-width: 800px;
+            width: 90%;
+        }
+
+        .video-container {
+            margin: 20px 0;
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        .video-feed {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            border: 3px solid #007bff;
+        }
+
+        h1 {
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            color: #666;
+            margin: 10px 0;
+        }
+
+        footer {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .error-message {
+            color: #dc3545;
+            display: none;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Real-time Emotion Detection</h1>
+        <p class="status">Live camera feed with emotion detection:</p>
+        <div class="video-container">
+            <img src="{{ url_for('video_feed') }}" alt="Live Video Feed" class="video-feed" onerror="handleVideoError()">
+            <p id="errorMessage" class="error-message">
+                Unable to access camera feed. Please make sure your camera is connected and you've granted permission to use it.
+            </p>
+        </div>
+        <footer>
+            <p>Built with Flask, OpenCV, and Deep Learning</p>
+        </footer>
+    </div>
+
+    <script>
+        function handleVideoError() {
+            document.getElementById('errorMessage').style.display = 'block';
+        }
+
+        // Attempt to reload the video feed if it fails
+        document.querySelector('.video-feed').addEventListener('error', function() {
+            setTimeout(() => {
+                this.src = "{{ url_for('video_feed') }}?" + new Date().getTime();
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
