@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emotion Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px;
+            max-width: 800px;
+            width: 90%;
+        }
+
+        .video-container {
+            margin: 20px 0;
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        #videoElement {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            border: 3px solid #007bff;
+            transform: scaleX(-1); /* Mirror the video */
+        }
+
+        #canvas {
+            display: none;
+        }
+
+        .emotion-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 1.2em;
+        }
+
+        .error-message {
+            color: #dc3545;
+            display: none;
+            margin: 10px 0;
+        }
+
+        .status {
+            color: #666;
+            margin: 10px 0;
+        }
+
+        footer {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Real-time Emotion Detection</h1>
+        <p class="status">Live camera feed with emotion detection:</p>
+        <div class="video-container">
+            <video id="videoElement" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+            <div id="emotionLabel" class="emotion-label">Initializing...</div>
+            <p id="errorMessage" class="error-message">
+                Unable to access camera. Please make sure your camera is connected and you've granted permission to use it.
+            </p>
+        </div>
+        <footer>
+            <p>Built with Flask, OpenCV, and Deep Learning</p>
+        </footer>
+    </div>
+
+    <script>
+        const video = document.getElementById('videoElement');
+        const errorMessage = document.getElementById('errorMessage');
+        const emotionLabel = document.getElementById('emotionLabel');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Request camera access
+        async function startVideo() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    } 
+                });
+                video.srcObject = stream;
+                errorMessage.style.display = 'none';
+                startEmotionDetection();
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                errorMessage.style.display = 'block';
+            }
+        }
+
+        // Process frames and get emotion predictions
+        async function startEmotionDetection() {
+            const processFrame = async () => {
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    // Set canvas size to match video
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    
+                    // Draw video frame to canvas
+                    ctx.drawImage(video, 0, 0);
+                    
+                    try {
+                        // Get frame data and send to server for processing
+                        const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                        const response = await fetch('/process_frame', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ image: imageData })
+                        });
+                        
+                        const result = await response.json();
+                        emotionLabel.textContent = `Emotion: ${result.emotion}`;
+                    } catch (err) {
+                        console.error('Error processing frame:', err);
+                    }
+                }
+                requestAnimationFrame(processFrame);
+            };
+            
+            processFrame();
+        }
+
+        // Start the video stream when the page loads
+        startVideo();
+    </script>
+</body>
+</html>
